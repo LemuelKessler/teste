@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="h-full bg-slate-50">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard de Metas do Cargo</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+            .print-full {
+                width: 100% !important;
+            }
+        }
+    </style>
+</head>
+<body class="h-full text-slate-800 flex flex-col min-h-screen">
+
+    <!-- Header Component -->
+    <header class="bg-indigo-900 text-white shadow-lg sticky top-0 z-30 no-print">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div class="flex items-center space-x-3">
+                    <div class="bg-indigo-600 p-2.5 rounded-xl shadow-inner">
+                        <i class="fa-solid fa-chart-line text-2xl text-white"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-xl sm:text-2xl font-bold tracking-tight">Dashboard de Acompanhamento de Metas</h1>
+                        <p class="text-xs sm:text-sm text-indigo-200">Gestão do Desempenho Operacional e Inventário</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <button id="reset-btn" onclick="resetData()" class="px-3.5 py-2 bg-indigo-800/80 hover:bg-indigo-700 text-indigo-100 rounded-lg text-sm font-medium transition flex items-center gap-2 border border-indigo-700 shadow-sm" title="Restaurar dados originais">
+                        <i class="fa-solid fa-rotate-left"></i>
+                        <span class="hidden sm:inline">Resetar Dados</span>
+                    </button>
+                    <button onclick="window.print()" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-medium transition flex items-center gap-2 shadow-sm">
+                        <i class="fa-solid fa-print"></i>
+                        <span>Imprimir / PDF</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+
+        <!-- KPI Cards Grid -->
+        <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            <!-- Card 1: Média Atingimento -->
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200/80 hover:shadow-md transition relative overflow-hidden group">
+                <div class="absolute top-0 right-0 w-2 h-full bg-indigo-500"></div>
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Atingimento Médio</p>
+                        <h3 id="kpi-avg-atendimento" class="text-3xl font-extrabold text-indigo-900 mt-2">0%</h3>
+                    </div>
+                    <div class="p-3 bg-indigo-50 text-indigo-600 rounded-xl group-hover:scale-110 transition">
+                        <i class="fa-solid fa-bullseye text-xl"></i>
+                    </div>
+                </div>
+                <div class="mt-4 flex items-center text-xs text-slate-500">
+                    <span id="kpi-avg-status" class="font-medium">Calculado sobre 10 metas</span>
+                </div>
+            </div>
+
+            <!-- Card 2: Gap Médio -->
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200/80 hover:shadow-md transition relative overflow-hidden group">
+                <div class="absolute top-0 right-0 w-2 h-full bg-rose-500"></div>
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Gap Geral Médio</p>
+                        <h3 id="kpi-avg-gap" class="text-3xl font-extrabold text-rose-600 mt-2">0%</h3>
+                    </div>
+                    <div class="p-3 bg-rose-50 text-rose-600 rounded-xl group-hover:scale-110 transition">
+                        <i class="fa-solid fa-chart-pie text-xl"></i>
+                    </div>
+                </div>
+                <div class="mt-4 flex items-center text-xs text-slate-500">
+                    <span>Oportunidade de crescimento</span>
+                </div>
+            </div>
+
+            <!-- Card 3: Metas Iniciadas -->
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200/80 hover:shadow-md transition relative overflow-hidden group">
+                <div class="absolute top-0 right-0 w-2 h-full bg-amber-500"></div>
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Metas Iniciadas</p>
+                        <h3 id="kpi-started-count" class="text-3xl font-extrabold text-slate-800 mt-2">0 <span class="text-sm font-normal text-slate-500">/ 10</span></h3>
+                    </div>
+                    <div class="p-3 bg-amber-50 text-amber-600 rounded-xl group-hover:scale-110 transition">
+                        <i class="fa-solid fa-spinner text-xl"></i>
+                    </div>
+                </div>
+                <div class="mt-4 flex items-center text-xs text-slate-500">
+                    <span id="kpi-not-started-count" class="text-rose-600 font-medium">0 não iniciadas</span>
+                </div>
+            </div>
+
+            <!-- Card 4: Maior Avanço -->
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200/80 hover:shadow-md transition relative overflow-hidden group">
+                <div class="absolute top-0 right-0 w-2 h-full bg-emerald-500"></div>
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Maior Avanço</p>
+                        <h3 id="kpi-max-goal" class="text-xl font-bold text-slate-800 mt-2 truncate max-w-[170px]" title="-">-</h3>
+                    </div>
+                    <div class="p-3 bg-emerald-50 text-emerald-600 rounded-xl group-hover:scale-110 transition">
+                        <i class="fa-solid fa-trophy text-xl"></i>
+                    </div>
+                </div>
+                <div class="mt-4 flex items-center text-xs text-slate-500">
+                    <span id="kpi-max-value" class="text-emerald-600 font-semibold">0% atingido</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Charts Grid Section -->
+        <section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Bar Chart: Progresso Individual por Meta -->
+            <div class="lg:col-span-2 bg-white rounded-2xl p-6 shadow-sm border border-slate-200/80 flex flex-col justify-between">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <h2 class="text-base font-bold text-slate-800">Progresso Detalhado por Meta</h2>
+                        <p class="text-xs text-slate-500">Comparação percentual de % Atingimento vs % Gap</p>
+                    </div>
+                    <div class="flex items-center gap-2 text-xs">
+                        <span class="inline-flex items-center gap-1"><span class="w-3 h-3 rounded-sm bg-indigo-600 inline-block"></span> Atingimento</span>
+                        <span class="inline-flex items-center gap-1"><span class="w-3 h-3 rounded-sm bg-slate-200 inline-block"></span> Gap</span>
+                    </div>
+                </div>
+                <div class="relative w-full h-[320px]">
+                    <canvas id="barChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Donut Chart: Distribuição de Status -->
+            <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200/80 flex flex-col justify-between">
+                <div class="mb-2">
+                    <h2 class="text-base font-bold text-slate-800">Status das Metas</h2>
+                    <p class="text-xs text-slate-500">Distribuição do estado de execução</p>
+                </div>
+                <div class="relative w-full h-[250px] flex items-center justify-center">
+                    <canvas id="donutChart"></canvas>
+                </div>
+                <div id="status-legend" class="grid grid-cols-3 gap-2 pt-4 border-t border-slate-100 text-center text-xs">
+                    <!-- Dynamic status pills loaded here -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Goals Management Table Card -->
+        <section class="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden">
+            <!-- Table Header & Controls -->
+            <div class="p-6 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h2 class="text-lg font-bold text-slate-800">Quadro Executivo de Metas</h2>
+                    <p class="text-xs text-slate-500 mt-0.5">Altere os percentuais diretamente na tabela para simular o progresso</p>
+                </div>
+                <div class="flex flex-wrap items-center gap-3 no-print">
+                    <!-- Search Input -->
+                    <div class="relative min-w-[200px]">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                        <input type="text" id="search-input" oninput="renderTable()" placeholder="Buscar meta..." class="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition">
+                    </div>
+                    <!-- Status Filter -->
+                    <select id="status-filter" onchange="renderTable()" class="py-1.5 px-3 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium text-slate-600">
+                        <option value="ALL">Todos os Status</option>
+                        <option value="SEM_PROGRESSO">Sem Progresso (0%)</option>
+                        <option value="EM_PROGRESSO">Em Progresso (1-99%)</option>
+                        <option value="CONCLUIDO">Concluído (100%)</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Table Body -->
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-50/80 text-slate-500 text-[11px] font-semibold uppercase tracking-wider border-b border-slate-200/80">
+                            <th class="py-3.5 px-4 w-20 text-center">Nº</th>
+                            <th class="py-3.5 px-6">Metas do Cargo</th>
+                            <th class="py-3.5 px-4 w-32 text-center">Status</th>
+                            <th class="py-3.5 px-6 w-56">Progresso</th>
+                            <th class="py-3.5 px-4 w-28 text-center">% Atingimento</th>
+                            <th class="py-3.5 px-4 w-24 text-center">% Gap</th>
+                        </tr>
+                    </thead>
+                    <tbody id="goals-table-body" class="divide-y divide-slate-100 text-sm">
+                        <!-- Dynamic Row Generation -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <div id="empty-state" class="hidden p-8 text-center text-slate-400">
+                <i class="fa-regular fa-folder-open text-3xl mb-2"></i>
+                <p class="text-sm">Nenhuma meta encontrada para os filtros selecionados.</p>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 mt-auto py-4 text-center text-xs text-slate-500 no-print">
+        <div class="max-w-7xl mx-auto px-4">
+            Painel Executivo de Gestão de Metas e Performance &copy; 2026
+        </div>
+    </footer>
+
+    <script>
+        // Initial Spreadsheet Data
+        const initialGoals = [
+            { id: "Meta1", title: "Montar o material das apresentações das reuniões Semanais de Inventario (weekly)", atingimento: 20 },
+            { id: "Meta2", title: "Estruturar os indicadores operacionais do Inventario, de uma forma clara. ex: Kanban", atingimento: 0 },
+            { id: "Meta3", title: "Startar os testes no app de gestão insumos", atingimento: 10 },
+            { id: "Meta4", title: "Startar os testes no app de gestão de equipamentos", atingimento: 10 },
+            { id: "Meta5", title: "Validar e garantir o uso correto do app de gestão de insumos e equipamentos pelo time de inventario", atingimento: 0 },
+            { id: "Meta6", title: "Consolidar o Diário de Bordo e apresentar 1 estudo mensal de causa raiz com base nos dados compilados", atingimento: 0 },
+            { id: "Meta7", title: "Melhoria Contínua de Processos", atingimento: 0 },
+            { id: "Meta8", title: "Participar das rotinas do analista, Dailys, treinamentos e weklys", atingimento: 0 },
+            { id: "Meta9", title: "Acompanhamento do Smart Sorting 2.0", atingimento: 20 },
+            { id: "Meta10", title: "Cumprir as reuniões 1-on-1s Semanais para medição do progresso", atingimento: 0 }
+        ];
+
+        // State Array
+        let goalsData = JSON.parse(JSON.stringify(initialGoals));
+
+        // Chart References
+        let barChartInstance = null;
+        let donutChartInstance = null;
+
+        // Initialize App
+        window.addEventListener('DOMContentLoaded', () => {
+            initCharts();
+            updateDashboard();
+        });
+
+        // Calculate All Metrics
+        function calculateMetrics() {
+            const total = goalsData.length;
+            const totalAtingimento = goalsData.reduce((acc, g) => acc + g.atingimento, 0);
+            const avgAtingimento = total > 0 ? (totalAtingimento / total).toFixed(1) : 0;
+            const avgGap = (100 - avgAtingimento).toFixed(1);
+
+            const startedCount = goalsData.filter(g => g.atingimento > 0).length;
+            const notStartedCount = total - startedCount;
+            const completedCount = goalsData.filter(g => g.atingimento === 100).length;
+            const inProgressCount = startedCount - completedCount;
+
+            // Find Max Goal
+            const maxVal = Math.max(...goalsData.map(g => g.atingimento));
+            const maxGoals = goalsData.filter(g => g.atingimento === maxVal && maxVal > 0);
+            
+            let maxGoalLabel = "-";
+            if (maxGoals.length === 1) {
+                maxGoalLabel = maxGoals[0].id;
+            } else if (maxGoals.length > 1) {
+                maxGoalLabel = maxGoals.map(g => g.id).join(', ');
+            }
+
+            return {
+                avgAtingimento,
+                avgGap,
+                startedCount,
+                notStartedCount,
+                completedCount,
+                inProgressCount,
+                maxVal,
+                maxGoalLabel
+            };
+        }
+
+        // Main Update Function
+        function updateDashboard() {
+            const metrics = calculateMetrics();
+
+            // 1. Update KPI Cards
+            document.getElementById('kpi-avg-atendimento').innerText = `${metrics.avgAtingimento}%`;
+            document.getElementById('kpi-avg-gap').innerText = `${metrics.avgGap}%`;
+            document.getElementById('kpi-started-count').innerHTML = `${metrics.startedCount} <span class="text-sm font-normal text-slate-500">/ ${goalsData.length}</span>`;
+            document.getElementById('kpi-not-started-count').innerText = `${metrics.notStartedCount} não iniciadas`;
+            
+            document.getElementById('kpi-max-goal').innerText = metrics.maxGoalLabel;
+            document.getElementById('kpi-max-goal').title = metrics.maxGoalLabel;
+            document.getElementById('kpi-max-value').innerText = `${metrics.maxVal}% atingido`;
+
+            // 2. Update Render Table
+            renderTable();
+
+            // 3. Update Charts
+            updateCharts(metrics);
+        }
+
+        // Render Interactive Table
+        function renderTable() {
+            const tbody = document.getElementById('goals-table-body');
+            const searchVal = document.getElementById('search-input').value.toLowerCase();
+            const filterVal = document.getElementById('status-filter').value;
+            const emptyState = document.getElementById('empty-state');
+
+            tbody.innerHTML = '';
+
+            const filteredGoals = goalsData.filter(goal => {
+                const matchesSearch = goal.id.toLowerCase().includes(searchVal) || goal.title.toLowerCase().includes(searchVal);
+                
+                let matchesStatus = true;
+                if (filterVal === 'SEM_PROGRESSO') matchesStatus = goal.atingimento === 0;
+                else if (filterVal === 'EM_PROGRESSO') matchesStatus = goal.atingimento > 0 && goal.atingimento < 100;
+                else if (filterVal === 'CONCLUIDO') matchesStatus = goal.atingimento === 100;
+
+                return matchesSearch && matchesStatus;
+            });
+
+            if (filteredGoals.length === 0) {
+                emptyState.classList.remove('hidden');
+            } else {
+                emptyState.classList.add('hidden');
+            }
+
+            filteredGoals.forEach((goal) => {
+                const gap = 100 - goal.atingimento;
+                const indexInOriginal = goalsData.findIndex(g => g.id === goal.id);
+
+                // Badge Logic
+                let badgeHTML = '';
+                if (goal.atingimento === 0) {
+                    badgeHTML = `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-100 text-rose-700">
+                        <span class="w-1.5 h-1.5 rounded-full bg-rose-500 mr-1.5"></span> Sem Progresso
+                    </span>`;
+                } else if (goal.atingimento < 100) {
+                    badgeHTML = `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-700">
+                        <span class="w-1.5 h-1.5 rounded-full bg-indigo-500 mr-1.5"></span> Em Progresso
+                    </span>`;
+                } else {
+                    badgeHTML = `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5"></span> Concluído
+                    </span>`;
+                }
+
+                // Progress bar color
+                let progressBg = "bg-indigo-600";
+                if (goal.atingimento === 0) progressBg = "bg-rose-500";
+                if (goal.atingimento === 100) progressBg = "bg-emerald-500";
+
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50/80 transition-colors";
+                tr.innerHTML = `
+                    <td class="py-3.5 px-4 font-semibold text-slate-600 text-center">${goal.id}</td>
+                    <td class="py-3.5 px-6 font-medium text-slate-800">${goal.title}</td>
+                    <td class="py-3.5 px-4 text-center">${badgeHTML}</td>
+                    <td class="py-3.5 px-6">
+                        <div class="flex items-center gap-3">
+                            <div class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
+                                <div class="${progressBg} h-2.5 rounded-full transition-all duration-300" style="width: ${goal.atingimento}%"></div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="py-3.5 px-4 text-center">
+                        <div class="inline-flex items-center">
+                            <input type="number" min="0" max="100" value="${goal.atingimento}" 
+                                onchange="updateGoalValue(${indexInOriginal}, this.value)"
+                                class="w-16 text-center py-1 px-1 bg-slate-50 border border-slate-300 rounded-md font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white text-xs">
+                            <span class="ml-1 text-slate-500 text-xs font-semibold">%</span>
+                        </div>
+                    </td>
+                    <td class="py-3.5 px-4 text-center font-bold text-slate-400">${gap}%</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Update single goal percentage
+        function updateGoalValue(index, newValue) {
+            let val = parseInt(newValue);
+            if (isNaN(val)) val = 0;
+            if (val < 0) val = 0;
+            if (val > 100) val = 100;
+
+            goalsData[index].atingimento = val;
+            updateDashboard();
+        }
+
+        // Reset Data
+        function resetData() {
+            goalsData = JSON.parse(JSON.stringify(initialGoals));
+            document.getElementById('search-input').value = '';
+            document.getElementById('status-filter').value = 'ALL';
+            updateDashboard();
+        }
+
+        // Initialize Chart.js
+        function initCharts() {
+            // 1. Bar Chart Setup
+            const ctxBar = document.getElementById('barChart').getContext('2d');
+            barChartInstance = new Chart(ctxBar, {
+                type: 'bar',
+                data: {
+                    labels: goalsData.map(g => g.id),
+                    datasets: [
+                        {
+                            label: '% Atingimento',
+                            data: goalsData.map(g => g.atingimento),
+                            backgroundColor: '#4f46e5', // Indigo 600
+                            borderRadius: 4,
+                            borderSkipped: false,
+                        },
+                        {
+                            label: '% Gap',
+                            data: goalsData.map(g => 100 - g.atingimento),
+                            backgroundColor: '#e2e8f0', // Slate 200
+                            borderRadius: 4,
+                            borderSkipped: false,
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.dataset.label}: ${context.raw}%`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            stacked: true,
+                            grid: { display: false }
+                        },
+                        y: {
+                            stacked: true,
+                            max: 100,
+                            ticks: {
+                                callback: value => `${value}%`
+                            },
+                            grid: { color: '#f1f5f9' }
+                        }
+                    }
+                }
+            });
+
+            // 2. Donut Chart Setup
+            const ctxDonut = document.getElementById('donutChart').getContext('2d');
+            donutChartInstance = new Chart(ctxDonut, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Sem Progresso (0%)', 'Em Progresso (1-99%)', 'Concluído (100%)'],
+                    datasets: [{
+                        data: [0, 0, 0],
+                        backgroundColor: ['#f43f5e', '#6366f1', '#10b981'], // Rose 500, Indigo 500, Emerald 500
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '70%',
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+        }
+
+        // Dynamic Chart Updates
+        function updateCharts(metrics) {
+            if (!barChartInstance || !donutChartInstance) return;
+
+            // Update Bar Chart
+            barChartInstance.data.labels = goalsData.map(g => g.id);
+            barChartInstance.data.datasets[0].data = goalsData.map(g => g.atingimento);
+            barChartInstance.data.datasets[1].data = goalsData.map(g => 100 - g.atingimento);
+            barChartInstance.update();
+
+            // Update Donut Chart Data
+            const notStarted = metrics.notStartedCount;
+            const inProgress = metrics.inProgressCount;
+            const completed = metrics.completedCount;
+
+            donutChartInstance.data.datasets[0].data = [notStarted, inProgress, completed];
+            donutChartInstance.update();
+
+            // Render Custom Legend for Donut
+            const legendContainer = document.getElementById('status-legend');
+            legendContainer.innerHTML = `
+                <div class="p-2 rounded-lg bg-rose-50 text-rose-700">
+                    <span class="block font-bold text-base">${notStarted}</span>
+                    <span class="text-[10px] uppercase font-semibold">Sem Progresso</span>
+                </div>
+                <div class="p-2 rounded-lg bg-indigo-50 text-indigo-700">
+                    <span class="block font-bold text-base">${inProgress}</span>
+                    <span class="text-[10px] uppercase font-semibold">Em Progresso</span>
+                </div>
+                <div class="p-2 rounded-lg bg-emerald-50 text-emerald-700">
+                    <span class="block font-bold text-base">${completed}</span>
+                    <span class="text-[10px] uppercase font-semibold">Concluído</span>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>
